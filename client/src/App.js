@@ -11,24 +11,37 @@ function App() {
   const [symbol, setSymbol] = useState('');
   const [timeframe, setTimeframe] = useState('1d');
   const [suggestions, setSuggestions] = useState([]);
+  const [news, setNews] = useState([]);
 
   const fetchStock = async () => {
     console.log('Fetching stock:', symbol, timeframe);
     try {
       const response = await axios.get(`http://localhost:3001/stocks?symbol=${symbol}&timeframe=${timeframe}`);
-      console.log('Response data:', response.data);
+      console.log('Stock data:', response.data);
       setStockData(response.data);
-      setSuggestions([]); // Clear suggestions after fetch
+      setSuggestions([]);
+      fetchNews(symbol);
     } catch (error) {
       console.error('Fetch error:', error.message);
       setStockData(null);
     }
   };
 
+  const fetchNews = async (stockSymbol) => {
+    try {
+      const response = await axios.get(`http://localhost:3001/news?symbol=${stockSymbol}`);
+      console.log('News data:', response.data);
+      setNews(response.data);
+    } catch (error) {
+      console.error('News fetch error:', error);
+      setNews([]);
+    }
+  };
+
   const handleInputChange = async (e) => {
     const value = e.target.value.toUpperCase();
     setSymbol(value);
-    if (value.length > 1) {
+    if (value.length >= 2) {
       try {
         const response = await axios.get(`http://localhost:3001/search?q=${value}`);
         console.log('Suggestions:', response.data);
@@ -60,7 +73,7 @@ function App() {
       return timeframe === '1d' ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : date.toLocaleDateString();
     }),
     datasets: [{
-      label: stockData.quote && stockData.quote.symbol ? `${stockData.quote.symbol} Price ($)` : 'Price ($)',
+      label: stockData && stockData.quote && stockData.quote.Symbol ? `${stockData.quote.Symbol} Price ($)` : 'Price ($)',
       data: stockData.historical.quotes.map(q => q.close),
       borderColor: '#007bff',
       backgroundColor: 'rgba(0, 123, 255, 0.1)',
@@ -74,7 +87,7 @@ function App() {
       legend: { position: 'top' },
       title: { 
         display: true, 
-        text: stockData && stockData.quote ? `${stockData.quote.symbol} - ${timeframe.toUpperCase()}` : 'Stock Chart', 
+        text: stockData && stockData.quote && stockData.quote.Symbol ? `${stockData.quote.Symbol} - ${timeframe.toUpperCase()}` : 'Stock Chart', 
         font: { size: 20 } 
       },
     },
@@ -114,24 +127,42 @@ function App() {
         </select>
         <button type="submit">Get Stock</button>
       </form>
-      <div className="content">
-        {stockData && stockData.quote ? (
-          <div className="stock-details left">
-            <h2>{stockData.quote.longName || 'Unknown'} ({stockData.quote.symbol || 'N/A'})</h2>
-            <p>Price: ${stockData.quote.regularMarketPrice || 'N/A'}</p>
-            <p>Volume: {stockData.quote.regularMarketVolume || 'N/A'}</p>
-            <p>Day High: ${stockData.quote.regularMarketDayHigh || 'N/A'}</p>
-            <p>Day Low: ${stockData.quote.regularMarketDayLow || 'N/A'}</p>
-          </div>
-        ) : (
-          <div className="left"><p>No stock data yet</p></div>
-        )}
-        <div className="chart-container right">
-          {stockData && stockData.historical && stockData.historical.quotes && stockData.historical.quotes.length > 0 ? (
-            <Line data={chartData} options={chartOptions} />
+      <div className="content-wrapper">
+        <div className="content">
+          {stockData && stockData.quote ? (
+            <div className="stock-details left">
+              <h2>{stockData.quote.Name || 'Unknown'} ({stockData.quote.Symbol || symbol || 'N/A'})</h2>
+              <p>{stockData.quote.Description || 'No company overview available.'}</p>
+              <p><strong>Sector:</strong> {stockData.quote.Sector || 'N/A'} | <strong>Industry:</strong> {stockData.quote.Industry || 'N/A'}</p>
+              <p><strong>Website:</strong> {stockData.quote.Symbol ? (
+                <a href={`https://www.${stockData.quote.Symbol.toLowerCase()}.com`} target="_blank" rel="noopener noreferrer">
+                  {stockData.quote.Symbol.toLowerCase()}.com
+                </a>
+              ) : 'N/A'}</p>
+              <p><strong>Current Price:</strong> ${stockData.quote['50DayMovingAverage'] || 'N/A'} | <strong>Market Cap:</strong> ${stockData.quote.MarketCapitalization || 'N/A'}</p>
+            </div>
           ) : (
-            <p>No chart data available</p>
+            <div className="left"><p>No stock data yet</p></div>
           )}
+          <div className="chart-container right">
+            {stockData && stockData.historical && stockData.historical.quotes && stockData.historical.quotes.length > 0 ? (
+              <Line data={chartData} options={chartOptions} />
+            ) : (
+              <p>No chart data available</p>
+            )}
+          </div>
+        </div>
+        <div className="news-container">
+          <h3>Latest News</h3>
+          <div className="news-scroll">
+            {news.length > 0 ? (
+              news.map((item, index) => (
+                <p key={index}>{item.date}: {item.title}</p>
+              ))
+            ) : (
+              <p>No news available</p>
+            )}
+          </div>
         </div>
       </div>
     </div>
