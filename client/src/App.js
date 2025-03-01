@@ -97,6 +97,14 @@ function App() {
     },
   };
 
+  const formatDate = (rawDate) => {
+    const year = rawDate.slice(0, 4);
+    const month = rawDate.slice(4, 6) - 1; // 0-based month
+    const day = rawDate.slice(6, 8);
+    const date = new Date(year, month, day);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
   return (
     <div className="App">
       <h1>Stock Portfolio Tracker</h1>
@@ -157,7 +165,7 @@ function App() {
           <div className="news-scroll">
             {news.length > 0 ? (
               news.map((item, index) => (
-                <p key={index}>{item.date}: {item.title}</p>
+                <p key={index}>{formatDate(item.date)}: {item.title}</p>
               ))
             ) : (
               <p>No news available</p>
