@@ -1,3 +1,6 @@
+require('dotenv').config();
+console.log('MONGO_URI:', process.env.MONGO_URI);
+console.log('ALPHA_VANTAGE_API_KEY:', process.env.ALPHA_VANTAGE_API_KEY);
 const express = require('express');
 const axios = require('axios');
 const { MongoClient } = require('mongodb');
@@ -6,8 +9,7 @@ const cors = require('cors');
 
 const app = express();
 const ALPHA_VANTAGE_API_KEY = process.env.ALPHA_VANTAGE_API_KEY;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://gayathri:G3mongodb@cluster0.i4ngl.mongodb.net/stock_portfolio?retryWrites=true&w=majority&appName=Cluster0';
-
+const MONGO_URI = process.env.MONGO_URI;
 let db;
 
 async function connectDB() {
@@ -16,6 +18,8 @@ async function connectDB() {
   db = client.db('stock_portfolio');
   console.log('Connected to MongoDB Atlas');
 }
+
+setTimeout(() => connectDB().catch(console.error), 1000);  // Delay 1s
 
 connectDB().catch(console.error);
 
